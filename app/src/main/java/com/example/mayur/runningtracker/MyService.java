@@ -1,5 +1,6 @@
 package com.example.mayur.runningtracker;
 
+import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -9,11 +10,15 @@ import android.location.LocationManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Parcelable;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 public class MyService extends Service implements LocationListener {
 
     private final Binder mBind = new mBinder();
+
+    static Location oLocation;
 
     public MyService() {
     }
@@ -24,12 +29,17 @@ public class MyService extends Service implements LocationListener {
         return mBind;
     }
 
+    @SuppressLint("MissingPermission")
     @Override
     public int onStartCommand(Intent intent, int flags, int startId){
 
         LocationManager locationManager =
                 (LocationManager)getSystemService(Context.LOCATION_SERVICE);
         MyService locationListener = new MyService();
+
+        oLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
+        Log.d("RunningTracker", "oLocation: " + oLocation.toString());
 
         try {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
@@ -50,6 +60,10 @@ public class MyService extends Service implements LocationListener {
 
     @Override
     public void onLocationChanged(Location location) {
+        float distance = oLocation.distanceTo(location)/1000;
+        Intent i = new Intent("LocationBroadcastService");
+        i.putExtra("dist", distance);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
         Log.d("RunningTracker", "Location changed: " + location.toString());
     }
 
