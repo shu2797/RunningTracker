@@ -37,9 +37,16 @@ public class MyService extends Service implements LocationListener {
                 (LocationManager)getSystemService(Context.LOCATION_SERVICE);
         MyService locationListener = new MyService();
 
-        oLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        //Log.d("RunningTracker", "get old location");
 
-        Log.d("RunningTracker", "oLocation: " + oLocation.toString());
+//        try{
+//            oLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+//            Log.d("RunningTracker", "oLocation: " + oLocation.toString());
+//        } catch (Exception e){
+//            Log.d("RunningTracker", e.toString());
+//        }
+
+
 
         try {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
@@ -60,7 +67,15 @@ public class MyService extends Service implements LocationListener {
 
     @Override
     public void onLocationChanged(Location location) {
-        float distance = oLocation.distanceTo(location)/1000;
+        float distance;
+        try {
+            distance = oLocation.distanceTo(location)/1000;
+        } catch (Exception e){
+            Log.d("RunningTracker", e.toString());
+            oLocation = location;
+            distance = oLocation.distanceTo(location);
+        }
+
         Intent i = new Intent("LocationBroadcastService");
         i.putExtra("dist", distance);
         LocalBroadcastManager.getInstance(this).sendBroadcast(i);

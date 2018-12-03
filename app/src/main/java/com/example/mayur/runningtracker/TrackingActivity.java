@@ -22,6 +22,8 @@ public class TrackingActivity extends AppCompatActivity {
 
     MyService ms;
 
+    Intent intent;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,12 +50,17 @@ public class TrackingActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        Intent intent = new Intent(this, MyService.class);
+        intent = new Intent(this, MyService.class);
         bindService(intent, myConnection, Context.BIND_AUTO_CREATE);
         Log.d("RunningTracker", "starting service");
         startService(intent);
+    }
 
-
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.d("RunningTracker", "Stop service");
+        stopService(intent);
     }
 
     private ServiceConnection myConnection = new ServiceConnection() {
