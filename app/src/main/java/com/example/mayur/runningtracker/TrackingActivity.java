@@ -1,5 +1,6 @@
 package com.example.mayur.runningtracker;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -14,13 +15,25 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.TextView;
 
-public class TrackingActivity extends AppCompatActivity {
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+
+public class TrackingActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     TextView tv_Distance;
 
     Boolean isBound;
 
     MyService ms;
+
+    Location location;
+    SupportMapFragment supportMapFragment;
+    GoogleMap gmap;
 
     Intent intent;
 
@@ -30,6 +43,8 @@ public class TrackingActivity extends AppCompatActivity {
         setContentView(R.layout.activity_tracking);
 
         tv_Distance = findViewById(R.id.tv_Distance);
+        supportMapFragment = (SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map);
+        supportMapFragment.getMapAsync(this);
 
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 new BroadcastReceiver() {
@@ -38,10 +53,11 @@ public class TrackingActivity extends AppCompatActivity {
                         Log.d("RunningTracker", "onReceive");
                         Float dis = intent.getExtras().getFloat("dist");
                         String distance = String.format("%.2f", dis);
-                        //String distance = Float.toString(intent.getExtras().getFloat("dist"));
+                        location = intent.getExtras().getParcelable("loc");
+                        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                        moveCamera(latLng, 15f);
                         Log.d("RunningTracker", "Distance: " + distance);
                         tv_Distance.setText(distance + "m");
-
                     }
                 }
                 , new IntentFilter("LocationBroadcastService"));
@@ -54,6 +70,7 @@ public class TrackingActivity extends AppCompatActivity {
         bindService(intent, myConnection, Context.BIND_AUTO_CREATE);
         Log.d("RunningTracker", "starting service");
         startService(intent);
+
     }
 
     @Override
@@ -79,4 +96,18 @@ public class TrackingActivity extends AppCompatActivity {
             Log.d("RunningTracker", "isBound = false");
         }
     };
+
+    @SuppressLint("MissingPermission")
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        Log.d("RunningTracker", "onMapReady");
+        gmap = googleMap;
+        gmap.setMyLocationEnabled(true);
+    }
+
+    public void moveCamera(LatLng latLng, float zoom){
+        //gmap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
+        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng,zoom);
+        gmap.animateCamera(cameraUpdate);
+    }
 }
