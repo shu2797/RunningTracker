@@ -77,7 +77,7 @@ public class MyService extends Service implements LocationListener {
         }
 
         Intent i = new Intent("LocationBroadcastService");
-        i.putExtra("dist", distance);
+        i.putExtra("oloc", oLocation);
         i.putExtra("loc", location);
         LocalBroadcastManager.getInstance(this).sendBroadcast(i);
         Log.d("RunningTracker", "Location changed: " + location.toString());
