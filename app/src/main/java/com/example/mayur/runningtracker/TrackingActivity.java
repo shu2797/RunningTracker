@@ -55,7 +55,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                         String distance = String.format("%.2f", dis);
                         location = intent.getExtras().getParcelable("loc");
                         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                        moveCamera(latLng, 15f);
+                        moveCamera(latLng, 18.5f);
                         Log.d("RunningTracker", "Distance: " + distance);
                         tv_Distance.setText(distance + "m");
                     }
@@ -103,10 +103,10 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         Log.d("RunningTracker", "onMapReady");
         gmap = googleMap;
         gmap.setMyLocationEnabled(true);
+        gmap.getUiSettings().setZoomControlsEnabled(true);
     }
 
     public void moveCamera(LatLng latLng, float zoom){
-        //gmap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
         CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng,zoom);
         gmap.animateCamera(cameraUpdate);
     }
