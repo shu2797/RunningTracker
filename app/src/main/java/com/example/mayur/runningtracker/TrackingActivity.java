@@ -73,38 +73,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
 
         //checkLocationPermission();
 
-        if(checkLocationPermission()){
-            supportMapFragment = (SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map);
-            supportMapFragment.getMapAsync(this);
-            LocalBroadcastManager.getInstance(this).registerReceiver(
-                    new BroadcastReceiver() {
-                        @Override
-                        public void onReceive(Context context, Intent intent) {
-                            Log.d("RunningTracker", "onReceive");
-                            //Float dis = intent.getExtras().getFloat("dist");
-                            //Location location1 = intent.getExtras().getParcelable("oloc");
-                            location = intent.getExtras().getParcelable("loc");
 
-                            //Float dis = location1.distanceTo(location);
-                            //String distance = String.format("%.2f", dis);
-
-                            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                            moveCamera(latLng, 18.5f);
-                            //Log.d("RunningTracker", "Distance: " + distance);
-                            //tv_Distance.setText(distance + "m");
-                            try{
-                                if (tracking) {
-                                    dis = oLocation.distanceTo(location)/1000;
-                                    float show_dist = dis + tot_dist;
-                                    String distance = String.format("%.2f", show_dist);
-                                    Log.d("RunningTracker", "Distance: " + distance);
-                                    tv_Distance.setText(distance + "m");
-                                }
-                            } catch (Exception e){}
-                        }
-                    }
-                    , new IntentFilter("LocationBroadcastService"));
-        }
 
 
         handler = new Handler();
@@ -202,6 +171,39 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         intent = new Intent(this, MyService.class);
         bindService(intent, myConnection, Context.BIND_AUTO_CREATE);
 
+        if(checkLocationPermission()){
+            supportMapFragment = (SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map);
+            supportMapFragment.getMapAsync(this);
+            LocalBroadcastManager.getInstance(this).registerReceiver(
+                    new BroadcastReceiver() {
+                        @Override
+                        public void onReceive(Context context, Intent intent) {
+                            Log.d("RunningTracker", "onReceive");
+                            //Float dis = intent.getExtras().getFloat("dist");
+                            //Location location1 = intent.getExtras().getParcelable("oloc");
+                            location = intent.getExtras().getParcelable("loc");
+
+                            //Float dis = location1.distanceTo(location);
+                            //String distance = String.format("%.2f", dis);
+
+                            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                            moveCamera(latLng, 18.5f);
+                            //Log.d("RunningTracker", "Distance: " + distance);
+                            //tv_Distance.setText(distance + "m");
+                            try{
+                                if (tracking) {
+                                    dis = oLocation.distanceTo(location)/1000;
+                                    float show_dist = dis + tot_dist;
+                                    String distance = String.format("%.2f", show_dist);
+                                    Log.d("RunningTracker", "Distance: " + distance);
+                                    tv_Distance.setText(distance + "m");
+                                }
+                            } catch (Exception e){}
+                        }
+                    }
+                    , new IntentFilter("LocationBroadcastService"));
+            startService(intent);
+        }
     }
 
     @Override
