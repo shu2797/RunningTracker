@@ -55,7 +55,6 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
     Handler handler;
     int Seconds, Minutes, MilliSeconds ;
 
-    Boolean permission;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,7 +106,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                 handler.removeCallbacks(runnable);
 
                 tracking = false;
-                tot_dist = dis;
+                //tot_dist = dis;
 
                 startFAB.show();
             }
@@ -122,6 +121,10 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                 pauseFAB.hide();
                 startFAB.show();
 
+                tv_Distance.setText("");
+                tv_Time.setText("");
+
+                tot_dist = (float)0.00;
                 MillisecondTime = 0L ;
                 StartTime = 0L ;
                 TimeBuff = 0L ;
@@ -193,8 +196,9 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                             try{
                                 if (tracking) {
                                     dis = oLocation.distanceTo(location)/1000;
-                                    float show_dist = dis + tot_dist;
-                                    String distance = String.format("%.2f", show_dist);
+                                    oLocation = location;
+                                    tot_dist = dis + tot_dist;
+                                    String distance = String.format("%.2f", tot_dist);
                                     Log.d("RunningTracker", "Distance: " + distance);
                                     tv_Distance.setText(distance + "m");
                                 }
