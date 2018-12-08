@@ -82,4 +82,15 @@
         app:layout_constraintEnd_toStartOf="@+id/tracking_stopFAB"
         app:srcCompat="@drawable/ic_pause" />
 
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/tracking_listFAB"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="8dp"
+        android:clickable="true"
+        app:layout_constraintBottom_toTopOf="@+id/tracking_stopFAB"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:srcCompat="@drawable/ic_list" />
+
 </android.support.constraint.ConstraintLayout>

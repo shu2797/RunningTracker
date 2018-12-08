@@ -2,6 +2,7 @@ package com.example.mayur.runningtracker;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.ListActivity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -23,6 +24,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,13 +36,16 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class TrackingActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     TextView tv_Distance, tv_Time;
-    FloatingActionButton startFAB, stopFAB, pauseFAB;
+    FloatingActionButton startFAB, stopFAB, pauseFAB, listFAB;
 
     Boolean isBound;
-    Boolean tracking = false;
+    Boolean tracking, active = false;
 
     MyService ms;
 
@@ -54,6 +59,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
     float dis, tot_dist = (float) 0.00;
     Handler handler;
     int Seconds, Minutes, MilliSeconds ;
+    String date;
 
 
     @Override
@@ -66,6 +72,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         stopFAB = findViewById(R.id.tracking_stopFAB);
         startFAB = findViewById(R.id.tracking_startFAB);
         pauseFAB = findViewById(R.id.tracking_pauseFAB);
+        listFAB = findViewById(R.id.tracking_listFAB);
 
 
         //permission = checkLocationPermission();
@@ -93,6 +100,13 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                 pauseFAB.show();
                 stopFAB.show();
 
+                if (!active){
+                    SimpleDateFormat SDF = new SimpleDateFormat("HH:mm:ss dd-MM-yyyy");
+                    date = SDF.format(new Date());
+                    active = true;
+                }
+
+
                 tracking = true;
                 oLocation = location;
 
@@ -117,6 +131,13 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
             public void onClick(View view) {
                 handler.removeCallbacks(runnable);
 
+                MyDBHandler dbHandler = new MyDBHandler(getBaseContext(), null, null, 1);
+                RunLog runLog = new RunLog(date, tv_Distance.getText().toString(), tv_Time.getText().toString());
+                Log.d("RunningTrackerDB", "Saving runLog");
+                dbHandler.addLog(runLog);
+                Log.d("RunningTrackerDB", "runLog saved");
+
+
                 stopFAB.hide();
                 pauseFAB.hide();
                 startFAB.show();
@@ -135,8 +156,16 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
 
 
                 tracking = false;
+                active = false;
 
+            }
+        });
 
+        listFAB.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent i = new Intent(getApplicationContext(), ViewListActivity.class);
+                startActivity(i);
             }
         });
     }

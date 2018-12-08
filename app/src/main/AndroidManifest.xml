@@ -36,9 +36,11 @@
 
         <provider
             android:name=".provider.MyContentProvider"
-            android:authorities="com.example.mayur.runningtracker.provider"
+            android:authorities="com.example.mayur.runningtracker.provider.MyContentProvider"
             android:enabled="true"
-            android:exported="true"></provider>
+            android:exported="true" />
+
+        <activity android:name=".ViewListActivity"></activity>
     </application>
 
 </manifest>

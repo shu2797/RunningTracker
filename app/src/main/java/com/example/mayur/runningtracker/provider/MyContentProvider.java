@@ -2,10 +2,32 @@ package com.example.mayur.runningtracker.provider;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
+import android.content.UriMatcher;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
+import android.text.TextUtils;
+
+import com.example.mayur.runningtracker.MyDBHandler;
+
 
 public class MyContentProvider extends ContentProvider {
+    private MyDBHandler myDB;
+
+    private static final String AUTHORITY = "com.example.mayur.runningtracker.provider.MyContentProvider";
+    private static final String RUNLOGS_TABLE = "runlogs";
+    public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/" + RUNLOGS_TABLE);
+
+    private static final UriMatcher sURIMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+
+    public static final int RUNLOGS = 1;
+
+
+    static {
+        sURIMatcher.addURI(AUTHORITY, RUNLOGS_TABLE, RUNLOGS);
+    }
+
     public MyContentProvider() {
     }
 
@@ -24,21 +46,43 @@ public class MyContentProvider extends ContentProvider {
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
-        // TODO: Implement this to handle requests to insert a new row.
-        throw new UnsupportedOperationException("Not yet implemented");
+        int uriType = sURIMatcher.match(uri);
+        SQLiteDatabase sqlDB = myDB.getWritableDatabase();
+        long id = 0;
+        switch (uriType){
+            case RUNLOGS:
+                id = sqlDB.insert(MyDBHandler.TABLE_RUNLOGS, null, values);
+                break;
+
+                default:
+                    throw new IllegalArgumentException("Unknown URI: " + uri);
+        }
+        getContext().getContentResolver().notifyChange(uri, null);
+        return Uri.parse(RUNLOGS_TABLE + "/" + id);
     }
 
     @Override
     public boolean onCreate() {
-        // TODO: Implement this to initialize your content provider on startup.
+        myDB = new MyDBHandler(getContext(), null, null, 1);
         return false;
     }
 
     @Override
     public Cursor query(Uri uri, String[] projection, String selection,
                         String[] selectionArgs, String sortOrder) {
-        // TODO: Implement this to handle query requests from clients.
-        throw new UnsupportedOperationException("Not yet implemented");
+        SQLiteQueryBuilder queryBuilder = new SQLiteQueryBuilder();
+        queryBuilder.setTables(MyDBHandler.TABLE_RUNLOGS);
+        int uriType = sURIMatcher.match(uri);
+        switch (uriType){
+            case RUNLOGS:
+                queryBuilder.appendWhere(MyDBHandler.COLUMN_DATETIME + "=" + uri.getLastPathSegment());
+                break;
+                default:
+                    throw new IllegalArgumentException("Unknown URI");
+        }
+        Cursor cursor = queryBuilder.query(myDB.getReadableDatabase(), projection, selection, selectionArgs, null, null, sortOrder);
+        cursor.setNotificationUri(getContext().getContentResolver(), uri);
+        return cursor;
     }
 
     @Override
