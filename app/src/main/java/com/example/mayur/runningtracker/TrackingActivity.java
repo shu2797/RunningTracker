@@ -101,7 +101,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                 stopFAB.show();
 
                 if (!active){
-                    SimpleDateFormat SDF = new SimpleDateFormat("HH:mm:ss dd-MM-yyyy");
+                    SimpleDateFormat SDF = new SimpleDateFormat("HH:mm dd-MMM-yyyy");
                     date = SDF.format(new Date());
                     active = true;
                 }
