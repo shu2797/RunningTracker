@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteException;
 import android.graphics.Color;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Gravity;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -51,21 +52,41 @@ public class ViewListActivity extends AppCompatActivity {
 
         try
         {
+            String bestQuery = "SELECT time FROM " + MyDBHandler.TABLE_RUNLOGS + " ORDER BY time ASC LIMIT 1";
+            Cursor c = db.rawQuery(bestQuery, null);
+
+
             String selectQuery = "SELECT * FROM "+ MyDBHandler.TABLE_RUNLOGS;
             Cursor cursor = db.rawQuery(selectQuery,null);
             if(cursor.getCount() >0)
             {
+                c.moveToNext();
+                long bestTime = c.getLong(c.getColumnIndex("time"));
                 while (cursor.moveToNext()) {
+
                     // Read columns data
                     String runDateTime= cursor.getString(cursor.getColumnIndex("datetime"));
                     String runDistance= cursor.getString(cursor.getColumnIndex("distance"));
-                    String runTime= cursor.getString(cursor.getColumnIndex("time"));
+                    long runTime= cursor.getLong(cursor.getColumnIndex("time"));
+
+                    long Seconds = (int) (runTime / 1000);
+
+                    long Minutes = Seconds / 60;
+
+                    Seconds = Seconds % 60;
+
+                    long MilliSeconds = (int) (runTime % 1000);
+
+                    String runTimetxt = ""+Minutes+":"+String.format("%02d",Seconds)+":"+String.format("%03d",MilliSeconds);
 
                     // dara rows
                     TableRow row = new TableRow(context);
                     row.setLayoutParams(new TableLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT,
                             TableLayout.LayoutParams.WRAP_CONTENT));
-                    String[] colText={runDateTime+"",runDistance,runTime};
+                    if (runTime == bestTime){
+                        row.setBackgroundColor(Color.parseColor("#99cc00"));
+                    }
+                    String[] colText={runDateTime+"",runDistance,runTimetxt};
                     for(String text:colText) {
                         TextView tv = new TextView(this);
                         tv.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT,

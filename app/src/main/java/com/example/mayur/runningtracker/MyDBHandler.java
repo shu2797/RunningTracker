@@ -35,9 +35,9 @@ public class MyDBHandler extends SQLiteOpenHelper {
         Log.d("RunningTrackerDB", "onCreate");
         String CREATE_RUNLOGS_TABLE = "CREATE TABLE " +
                 TABLE_RUNLOGS + "("
-                + COLUMN_DATETIME + " TEXT PRIMARY KEY," +
+                + COLUMN_DATETIME + " TEXT," +
                 COLUMN_DISTANCE
-                + " TEXT," + COLUMN_TIME + " TEXT" + ")";
+                + " TEXT," + COLUMN_TIME + " REAL" + ")";
         db.execSQL(CREATE_RUNLOGS_TABLE);
     }
 
@@ -64,14 +64,15 @@ public class MyDBHandler extends SQLiteOpenHelper {
         String selection = null;
         Cursor c = myCR.query(MyContentProvider.CONTENT_URI, projection, selection, null, null);
 
-        String datetime, distance, time;
+        String datetime, distance;
+        long time;
 
         if(c != null){
             if(c.moveToFirst()){
                 do {
                     datetime = c.getString(c.getColumnIndex(COLUMN_DATETIME));
                     distance = c.getString(c.getColumnIndex(COLUMN_DISTANCE));
-                    time = c.getString(c.getColumnIndex(COLUMN_TIME));
+                    time = c.getLong(c.getColumnIndex(COLUMN_TIME));
 
                     RunLog runLog = new RunLog(datetime, distance, time);
                     runLogList.add(runLog);

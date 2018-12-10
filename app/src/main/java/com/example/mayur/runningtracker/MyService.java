@@ -13,12 +13,12 @@ import android.os.IBinder;
 import android.os.Parcelable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.widget.Toast;
 
 public class MyService extends Service implements LocationListener {
 
     private final Binder mBind = new mBinder();
 
-    static Location oLocation;
 
     public MyService() {
     }
@@ -36,15 +36,6 @@ public class MyService extends Service implements LocationListener {
         LocationManager locationManager =
                 (LocationManager)getSystemService(Context.LOCATION_SERVICE);
         MyService locationListener = new MyService();
-
-        //Log.d("RunningTracker", "get old location");
-
-//        try{
-//            oLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-//            Log.d("RunningTracker", "oLocation: " + oLocation.toString());
-//        } catch (Exception e){
-//            Log.d("RunningTracker", e.toString());
-//        }
 
 
 
@@ -67,17 +58,9 @@ public class MyService extends Service implements LocationListener {
 
     @Override
     public void onLocationChanged(Location location) {
-        float distance;
-        try {
-            distance = oLocation.distanceTo(location)/1000;
-        } catch (Exception e){
-            Log.d("RunningTracker", e.toString());
-            oLocation = location;
-            distance = oLocation.distanceTo(location);
-        }
+
 
         Intent i = new Intent("LocationBroadcastService");
-        i.putExtra("oloc", oLocation);
         i.putExtra("loc", location);
         LocalBroadcastManager.getInstance(this).sendBroadcast(i);
         Log.d("RunningTracker", "Location changed: " + location.toString());

@@ -3,13 +3,13 @@ package com.example.mayur.runningtracker;
 public class RunLog {
     private String dateTime;
     private String distance;
-    private String time;
+    private long time;
 
     public RunLog(){
 
     }
 
-    public RunLog(String dt, String dis, String t){
+    public RunLog(String dt, String dis, long t){
         this.dateTime = dt;
         this.distance = dis;
         this.time = t;
@@ -31,11 +31,11 @@ public class RunLog {
         this.distance = distance;
     }
 
-    public String getTime() {
+    public long getTime() {
         return time;
     }
 
-    public void setTime(String time) {
+    public void setTime(long time) {
         this.time = time;
     }
 }
