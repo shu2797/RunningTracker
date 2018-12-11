@@ -12,6 +12,10 @@ package com.example.mayur.runningtracker;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -23,16 +27,20 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.location.Location;
+import android.media.MediaMetadataRetriever;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.TooltipCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -61,6 +69,8 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
     //service
     MyService ms;
 
+    private NotificationManager notificationManager;
+
     //map variables
     Location location, oLocation;
     SupportMapFragment supportMapFragment;
@@ -77,43 +87,6 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
 
     String date;
 
-    //time recording runnable process
-    public Runnable runnable = new Runnable() {
-
-        public void run() {
-            MillisecondTime = SystemClock.uptimeMillis() - StartTime; //update time
-            UpdateTime = TimeBuff + MillisecondTime; //update total time
-            Seconds = (int) (UpdateTime / 1000);
-            Minutes = Seconds / 60;
-            Seconds = Seconds % 60;
-            MilliSeconds = (int) (UpdateTime % 1000);
-
-            //update time textView
-            tv_Time.setText("" + Minutes + ":"
-                    + String.format("%02d", Seconds) + ":"
-                    + String.format("%03d", MilliSeconds));
-
-            handler.postDelayed(this, 0);
-        }
-
-    };
-
-    //ServiceConnection for service
-    private ServiceConnection myConnection = new ServiceConnection() {
-        //Bind Service
-        @Override
-        public void onServiceConnected(ComponentName componentName, IBinder service) {
-            MyService.mBinder binder = (MyService.mBinder) service;
-            ms = binder.getService();
-            isBound = true;
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName componentName) {
-            isBound = false;
-        }
-    };
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -126,6 +99,16 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         startFAB = findViewById(R.id.tracking_startFAB);
         pauseFAB = findViewById(R.id.tracking_pauseFAB);
         listFAB = findViewById(R.id.tracking_listFAB);
+
+        //set tooltips for the buttons
+        TooltipCompat.setTooltipText(stopFAB, "Stop tracking and save log");
+        TooltipCompat.setTooltipText(startFAB, "Start tracking");
+        TooltipCompat.setTooltipText(pauseFAB, "Pause tracking");
+        TooltipCompat.setTooltipText(listFAB, "View all logs and best time");
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            notificationManager = getSystemService(NotificationManager.class); //assign notification manager to system
+        }
 
         handler = new Handler();
 
@@ -155,6 +138,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                     tv_Distance.setText("0.00m"); //if starting new log, reset distance textView
                     active = true; //set status to ACTIVE (currently tracking)
                 }
+                sendNotif(); //send notification
                 oLocation = location; //set start location to current location
             }
         });
@@ -168,7 +152,10 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
 
                 tracking = false; //set status to NOT TRACKING
 
+                sendNotif(); //send notification
+
                 startFAB.show(); //show start button
+                pauseFAB.hide();
             }
         });
 
@@ -210,6 +197,8 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                 stopFAB.hide();
                 pauseFAB.hide();
                 startFAB.show();
+
+                notificationManager.cancel(1); //clear notification
 
                 tv_Distance.setText("");
                 tv_Time.setText("");
@@ -281,6 +270,43 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         }
     }
 
+    //time recording runnable process
+    public Runnable runnable = new Runnable() {
+
+        public void run() {
+            MillisecondTime = SystemClock.uptimeMillis() - StartTime; //update time
+            UpdateTime = TimeBuff + MillisecondTime; //update total time
+            Seconds = (int) (UpdateTime / 1000);
+            Minutes = Seconds / 60;
+            Seconds = Seconds % 60;
+            MilliSeconds = (int) (UpdateTime % 1000);
+
+            //update time textView
+            tv_Time.setText("" + Minutes + ":"
+                    + String.format("%02d", Seconds) + ":"
+                    + String.format("%03d", MilliSeconds));
+
+            handler.postDelayed(this, 0);
+        }
+
+    };
+
+    //ServiceConnection for service
+    private ServiceConnection myConnection = new ServiceConnection() {
+        //Bind Service
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder service) {
+            MyService.mBinder binder = (MyService.mBinder) service;
+            ms = binder.getService();
+            isBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            isBound = false;
+        }
+    };
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -312,6 +338,30 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         //Google Map view animation when location is changed
         CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, zoom);
         gmap.animateCamera(cameraUpdate);
+    }
+
+    //function to send notification
+    public void sendNotif(){
+        Intent intent = getIntent();
+        PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), (int)System.currentTimeMillis(), intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        //notification channel created to support android SDK 26+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            NotificationChannel notificationChannel = new NotificationChannel("runningTracker", "RunningTracker", notificationManager.IMPORTANCE_LOW);
+            notificationManager.createNotificationChannel(notificationChannel);
+        }
+
+        Notification notif = new NotificationCompat.Builder(this, "runningTracker")
+                .setSmallIcon(R.drawable.ic_run)
+                .setContentTitle("RunningTracker")
+                .setContentText(tracking?"Tracking":"Paused")
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setContentIntent(pendingIntent)
+                .setOngoing(true)
+                .build();
+
+        notificationManager.notify(1, notif); //send notification
+
     }
 
     //check and ask location permission function
