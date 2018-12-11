@@ -154,8 +154,6 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         startFAB.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(TAG, "Starting service");
-                startService(intent); //start the service
                 StartTime = SystemClock.uptimeMillis(); //get current system uptime
                 handler.postDelayed(runnable, 0);
                 tracking = true; //set status to TRACKING
@@ -273,6 +271,8 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
     @Override
     protected void onStart() {
         super.onStart();
+
+        Log.d(TAG, "Starting service");
 
         //bind service
         intent = new Intent(this, MyService.class);
