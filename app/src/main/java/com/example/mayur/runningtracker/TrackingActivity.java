@@ -27,7 +27,6 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.location.Location;
-import android.media.MediaMetadataRetriever;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -68,24 +67,54 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
 
     //service
     MyService ms;
-
-    private NotificationManager notificationManager;
-
     //map variables
     Location location, oLocation;
     SupportMapFragment supportMapFragment;
     GoogleMap gmap;
-
     Intent intent;
     Context cont = this;
-
     //time recording variables
     long MillisecondTime, StartTime, TimeBuff, UpdateTime = 0L;
     float dis, tot_dist = (float) 0.00;
     Handler handler;
     int Seconds, Minutes, MilliSeconds;
+    //time recording runnable process
+    public Runnable runnable = new Runnable() {
 
+        public void run() {
+            MillisecondTime = SystemClock.uptimeMillis() - StartTime; //update time
+            UpdateTime = TimeBuff + MillisecondTime; //update total time
+            Seconds = (int) (UpdateTime / 1000);
+            Minutes = Seconds / 60;
+            Seconds = Seconds % 60;
+            MilliSeconds = (int) (UpdateTime % 1000);
+
+            //update time textView
+            tv_Time.setText("" + Minutes + ":"
+                    + String.format("%02d", Seconds) + ":"
+                    + String.format("%03d", MilliSeconds));
+
+            handler.postDelayed(this, 0);
+        }
+
+    };
     String date;
+    private NotificationManager notificationManager;
+    //ServiceConnection for service
+    private ServiceConnection myConnection = new ServiceConnection() {
+        //Bind Service
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder service) {
+            MyService.mBinder binder = (MyService.mBinder) service;
+            ms = binder.getService();
+            isBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            isBound = false;
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -270,43 +299,6 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         }
     }
 
-    //time recording runnable process
-    public Runnable runnable = new Runnable() {
-
-        public void run() {
-            MillisecondTime = SystemClock.uptimeMillis() - StartTime; //update time
-            UpdateTime = TimeBuff + MillisecondTime; //update total time
-            Seconds = (int) (UpdateTime / 1000);
-            Minutes = Seconds / 60;
-            Seconds = Seconds % 60;
-            MilliSeconds = (int) (UpdateTime % 1000);
-
-            //update time textView
-            tv_Time.setText("" + Minutes + ":"
-                    + String.format("%02d", Seconds) + ":"
-                    + String.format("%03d", MilliSeconds));
-
-            handler.postDelayed(this, 0);
-        }
-
-    };
-
-    //ServiceConnection for service
-    private ServiceConnection myConnection = new ServiceConnection() {
-        //Bind Service
-        @Override
-        public void onServiceConnected(ComponentName componentName, IBinder service) {
-            MyService.mBinder binder = (MyService.mBinder) service;
-            ms = binder.getService();
-            isBound = true;
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName componentName) {
-            isBound = false;
-        }
-    };
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -341,12 +333,12 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
     }
 
     //function to send notification
-    public void sendNotif(){
+    public void sendNotif() {
         Intent intent = getIntent();
-        PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), (int)System.currentTimeMillis(), intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), (int) System.currentTimeMillis(), intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         //notification channel created to support android SDK 26+
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel notificationChannel = new NotificationChannel("runningTracker", "RunningTracker", notificationManager.IMPORTANCE_LOW);
             notificationManager.createNotificationChannel(notificationChannel);
         }
@@ -354,7 +346,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         Notification notif = new NotificationCompat.Builder(this, "runningTracker")
                 .setSmallIcon(R.drawable.ic_run)
                 .setContentTitle("RunningTracker")
-                .setContentText(tracking?"Tracking":"Paused")
+                .setContentText(tracking ? "Tracking" : "Paused")
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setContentIntent(pendingIntent)
                 .setOngoing(true)
