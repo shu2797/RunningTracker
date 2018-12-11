@@ -235,7 +235,6 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                             @Override
                             public void onReceive(Context context, Intent intent) {
                                 location = intent.getExtras().getParcelable("loc");
-                                Toast.makeText(cont, location.toString(), Toast.LENGTH_SHORT).show();
                                 LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
                                 moveCamera(latLng, 18.5f);
                                 try {
