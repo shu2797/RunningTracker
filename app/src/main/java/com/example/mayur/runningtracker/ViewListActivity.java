@@ -16,6 +16,7 @@ import android.database.sqlite.SQLiteException;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Gravity;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -23,11 +24,15 @@ import android.widget.TextView;
 
 public class ViewListActivity extends AppCompatActivity {
 
+    public static final String TAG = "RunningTracker";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_view_list);
         Context context = this;
+
+        Log.d(TAG, "ViewListActivity");
 
         // call database helper
         MyDBHandler dbHandler = new MyDBHandler(this, null, null, 1);
@@ -59,6 +64,7 @@ public class ViewListActivity extends AppCompatActivity {
         // Start the transaction.
         db.beginTransaction();
 
+        Log.d(TAG, "Populating list");
         try {
             //get log with best time
             String bestQuery = "SELECT time FROM " + MyDBHandler.TABLE_RUNLOGS + " ORDER BY time ASC LIMIT 1";

@@ -57,6 +57,8 @@ import java.util.Date;
 
 public class TrackingActivity extends AppCompatActivity implements OnMapReadyCallback {
 
+    public static final String TAG = "RunningTracker";
+
     //Activity components
     TextView tv_Distance, tv_Time;
     FloatingActionButton startFAB, stopFAB, pauseFAB, listFAB;
@@ -121,6 +123,8 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tracking);
 
+        Log.d(TAG, "TrackingActivity");
+
         //connect to UI components
         tv_Distance = findViewById(R.id.tv_Distance);
         tv_Time = findViewById(R.id.tv_Time);
@@ -150,6 +154,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         startFAB.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Log.d(TAG, "Starting service");
                 startService(intent); //start the service
                 StartTime = SystemClock.uptimeMillis(); //get current system uptime
                 handler.postDelayed(runnable, 0);
@@ -167,6 +172,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                     tv_Distance.setText("0.00m"); //if starting new log, reset distance textView
                     active = true; //set status to ACTIVE (currently tracking)
                 }
+                Log.d(TAG, "Tracking");
                 sendNotif(); //send notification
                 oLocation = location; //set start location to current location
             }
@@ -185,6 +191,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
 
                 startFAB.show(); //show start button
                 pauseFAB.hide();
+                Log.d(TAG, "Paused");
             }
         });
 
@@ -194,9 +201,12 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
             public void onClick(View view) {
                 handler.removeCallbacks(runnable); //stop runnable
 
+                Log.d(TAG, "Stopped");
+
                 MyDBHandler dbHandler = new MyDBHandler(getBaseContext(), null, null, 1); //call database helper
                 RunLog runLog = new RunLog(date, tv_Distance.getText().toString(), UpdateTime); //create new record runLog
                 dbHandler.addLog(runLog); //add new log to database
+                Log.d(TAG, "Log saved");
 
                 //get log details for best time in database
                 SQLiteDatabase db = dbHandler.getReadableDatabase();
@@ -220,6 +230,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                             })
                             .create()
                             .show();
+                    Log.d(TAG, "New best time");
                 }
 
                 //reset UI
@@ -272,6 +283,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
             //if granted, update Google Map view
             supportMapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
             supportMapFragment.getMapAsync(this);
+            Log.d(TAG, "Setting up Google Map view");
 
             //Broadcast receiver everytime location is updated
             LocalBroadcastManager.getInstance(this).registerReceiver(
@@ -306,6 +318,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
         //when app is destroyed, stop service
         handler.removeCallbacks(runnable);
         stopService(intent);
+        Log.d(TAG, "Stopping service");
     }
 
     @Override
@@ -415,6 +428,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                         //Update map
                         supportMapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
                         supportMapFragment.getMapAsync(this);
+                        Log.d(TAG, "Setting up Google Map view");
 
                         //Broadcast receiver everytime location is updated
                         LocalBroadcastManager.getInstance(this).registerReceiver(

@@ -13,10 +13,13 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.example.mayur.runningtracker.provider.MyContentProvider;
 
 public class MyDBHandler extends SQLiteOpenHelper {
+
+    public static final String TAG = "RunningTrackerDB";
 
     public static final String TABLE_RUNLOGS = "runlogs";
     public static final String COLUMN_DATETIME = "datetime";
@@ -53,5 +56,6 @@ public class MyDBHandler extends SQLiteOpenHelper {
         values.put(COLUMN_DISTANCE, runLog.getDistance());
         values.put(COLUMN_TIME, runLog.getTime());
         myCR.insert(MyContentProvider.CONTENT_URI, values);
+        Log.d(TAG, "New log added");
     }
 }

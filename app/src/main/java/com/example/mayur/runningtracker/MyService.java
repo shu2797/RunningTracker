@@ -23,6 +23,8 @@ import android.util.Log;
 
 public class MyService extends Service implements LocationListener {
 
+    public static final String TAG = "RunningTrackerService";
+
     private final Binder mBind = new mBinder();
 
 
@@ -31,6 +33,7 @@ public class MyService extends Service implements LocationListener {
 
     @Override
     public IBinder onBind(Intent intent) {
+        Log.d(TAG, "onBind");
         return mBind;
     }
 
@@ -57,6 +60,8 @@ public class MyService extends Service implements LocationListener {
     //when location change is detected
     @Override
     public void onLocationChanged(Location location) {
+        Log.d(TAG, "Location changed");
+
         //broadcast new location
         Intent i = new Intent("LocationBroadcastService");
         i.putExtra("loc", location);
