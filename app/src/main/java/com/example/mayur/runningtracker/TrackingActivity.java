@@ -1,8 +1,17 @@
+/*
+Name: Mayur Gunputh
+Date: 11 Dec 2018
+Project: G53MDP Coursework 2
+TrackingActivity.java
+The application launches into this activity. It contains a Google Map view which show the user location, allows the user to start logging, pause and stop.
+It displays distance covered and time spent in real time. It also allows the user to launch ViewListActivity which allows the user to look
+at all logs.
+ */
+
 package com.example.mayur.runningtracker;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.ListActivity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -26,14 +35,12 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
@@ -43,14 +50,18 @@ import java.util.Date;
 
 public class TrackingActivity extends AppCompatActivity implements OnMapReadyCallback {
 
+    //Activity components
     TextView tv_Distance, tv_Time;
     FloatingActionButton startFAB, stopFAB, pauseFAB, listFAB;
 
+    //booleans
     Boolean isBound;
     Boolean tracking, active = false;
 
+    //service
     MyService ms;
 
+    //map variables
     Location location, oLocation;
     SupportMapFragment supportMapFragment;
     GoogleMap gmap;
@@ -58,159 +69,26 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
     Intent intent;
     Context cont = this;
 
-    long MillisecondTime, StartTime, TimeBuff, UpdateTime = 0L ;
+    //time recording variables
+    long MillisecondTime, StartTime, TimeBuff, UpdateTime = 0L;
     float dis, tot_dist = (float) 0.00;
     Handler handler;
-    int Seconds, Minutes, MilliSeconds ;
+    int Seconds, Minutes, MilliSeconds;
+
     String date;
 
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_tracking);
-
-        try {
-            tv_Distance = findViewById(R.id.tv_Distance);
-            tv_Time = findViewById(R.id.tv_Time);
-            stopFAB = findViewById(R.id.tracking_stopFAB);
-            startFAB = findViewById(R.id.tracking_startFAB);
-            pauseFAB = findViewById(R.id.tracking_pauseFAB);
-            listFAB = findViewById(R.id.tracking_listFAB);
-
-
-            handler = new Handler();
-
-            startFAB.show();
-            pauseFAB.hide();
-            stopFAB.hide();
-
-            startFAB.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    Log.d("RunningTracker", "starting service");
-                    startService(intent);
-                    StartTime = SystemClock.uptimeMillis();
-                    handler.postDelayed(runnable, 0);
-                    tracking = true;
-                    startFAB.hide();
-                    pauseFAB.show();
-                    stopFAB.show();
-
-                    if (!active) {
-                        SimpleDateFormat SDF = new SimpleDateFormat("HH:mm dd-MMM-yyyy");
-                        date = SDF.format(new Date());
-                        Log.d("RunningTracker", "Reset distance");
-                        tv_Distance.setText("0.00m");
-                        active = true;
-                    }
-
-
-                    tracking = true;
-                    oLocation = location;
-
-                }
-            });
-
-            pauseFAB.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    TimeBuff += MillisecondTime;
-                    handler.removeCallbacks(runnable);
-
-                    tracking = false;
-                    //tot_dist = dis;
-
-                    startFAB.show();
-                }
-            });
-
-            stopFAB.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    handler.removeCallbacks(runnable);
-
-                    MyDBHandler dbHandler = new MyDBHandler(getBaseContext(), null, null, 1);
-                    RunLog runLog = new RunLog(date, tv_Distance.getText().toString(), UpdateTime);
-                    Log.d("RunningTrackerDB", "Saving runLog");
-                    dbHandler.addLog(runLog);
-                    Log.d("RunningTrackerDB", "runLog saved");
-
-                    SQLiteDatabase db = dbHandler.getReadableDatabase();
-                    String bestQuery = "SELECT * FROM " + MyDBHandler.TABLE_RUNLOGS + " ORDER BY time ASC LIMIT 1";
-                    Cursor c = db.rawQuery(bestQuery, null);
-                    c.moveToNext();
-                    String bestDateTime = c.getString(c.getColumnIndex("datetime"));
-                    String dis = c.getString(c.getColumnIndex("distance"));
-                    long time = c.getLong(c.getColumnIndex("time"));
-                    if (date.equals(bestDateTime) && dis.equals(tv_Distance.getText().toString()) && (time == UpdateTime)) {
-                        new AlertDialog.Builder(cont)
-                                .setTitle("New Best Time")
-                                .setMessage("Congratulations. You set a new record! Distance: " + tv_Distance.getText().toString() + " Time: " + tv_Time.getText().toString())
-                                .setCancelable(false)
-                                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialogInterface, int i) {
-                                    }
-                                })
-                                .create()
-                                .show();
-                    }
-
-
-                    stopFAB.hide();
-                    pauseFAB.hide();
-                    startFAB.show();
-
-                    tv_Distance.setText("");
-                    tv_Time.setText("");
-
-                    tot_dist = (float) 0.00;
-                    MillisecondTime = 0L;
-                    StartTime = 0L;
-                    TimeBuff = 0L;
-                    UpdateTime = 0L;
-                    Seconds = 0;
-                    Minutes = 0;
-                    MilliSeconds = 0;
-
-
-                    tracking = false;
-                    active = false;
-
-                }
-            });
-
-            listFAB.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    Intent i = new Intent(getApplicationContext(), ViewListActivity.class);
-                    startActivity(i);
-                }
-            });
-        }catch (Exception e){
-            Log.d("RunningTracker", e.toString());
-        }
-    }
-
+    //time recording runnable process
     public Runnable runnable = new Runnable() {
 
         public void run() {
-
-            MillisecondTime = SystemClock.uptimeMillis() - StartTime;
-
-            UpdateTime = TimeBuff + MillisecondTime;
-
+            MillisecondTime = SystemClock.uptimeMillis() - StartTime; //update time
+            UpdateTime = TimeBuff + MillisecondTime; //update total time
             Seconds = (int) (UpdateTime / 1000);
-
             Minutes = Seconds / 60;
-
             Seconds = Seconds % 60;
-
             MilliSeconds = (int) (UpdateTime % 1000);
 
-            Log.d("RunningTime", ""+Minutes+":"+String.format("%02d",Seconds)+":"+String.format("%03d",MilliSeconds));
-
+            //update time textView
             tv_Time.setText("" + Minutes + ":"
                     + String.format("%02d", Seconds) + ":"
                     + String.format("%03d", MilliSeconds));
@@ -220,59 +98,7 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
 
     };
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        try {
-            intent = new Intent(this, MyService.class);
-            bindService(intent, myConnection, Context.BIND_AUTO_CREATE);
-
-            if (checkLocationPermission()) {
-                supportMapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-                supportMapFragment.getMapAsync(this);
-                LocalBroadcastManager.getInstance(this).registerReceiver(
-                        new BroadcastReceiver() {
-                            @Override
-                            public void onReceive(Context context, Intent intent) {
-                                location = intent.getExtras().getParcelable("loc");
-                                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                                moveCamera(latLng, 18.5f);
-                                try {
-                                    if (tracking) {
-                                        dis = oLocation.distanceTo(location);
-                                        oLocation = location;
-                                        tot_dist = dis + tot_dist;
-                                        String distance = String.format("%.2f", tot_dist);
-                                        Log.d("RunningTracker", "Distance: " + distance);
-                                        tv_Distance.setText(distance + "m");
-                                    }
-                                } catch (Exception e) {
-                                }
-                            }
-                        }
-                        , new IntentFilter("LocationBroadcastService"));
-                startService(intent);
-            }
-        }catch (Exception e){
-            Log.d("RunningTracker", e.toString());
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        Log.d("RunningTracker", "Stop service");
-        handler.removeCallbacks(runnable);
-        stopService(intent);
-    }
-
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        moveTaskToBack(true);
-    }
-
-
+    //ServiceConnection for service
     private ServiceConnection myConnection = new ServiceConnection() {
         //Bind Service
         @Override
@@ -280,44 +106,226 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
             MyService.mBinder binder = (MyService.mBinder) service;
             ms = binder.getService();
             isBound = true;
-            Log.d("RunningTracker", "isBound = true");
         }
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
             isBound = false;
-            Log.d("RunningTracker", "isBound = false");
         }
     };
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_tracking);
+
+        //connect to UI components
+        tv_Distance = findViewById(R.id.tv_Distance);
+        tv_Time = findViewById(R.id.tv_Time);
+        stopFAB = findViewById(R.id.tracking_stopFAB);
+        startFAB = findViewById(R.id.tracking_startFAB);
+        pauseFAB = findViewById(R.id.tracking_pauseFAB);
+        listFAB = findViewById(R.id.tracking_listFAB);
+
+        handler = new Handler();
+
+        //show only start button
+        startFAB.show();
+        pauseFAB.hide();
+        stopFAB.hide();
+
+        //start button listener
+        startFAB.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startService(intent); //start the service
+                StartTime = SystemClock.uptimeMillis(); //get current system uptime
+                handler.postDelayed(runnable, 0);
+                tracking = true; //set status to TRACKING
+
+                //show pause and stop buttons
+                startFAB.hide();
+                pauseFAB.show();
+                stopFAB.show();
+
+                //if not paused
+                if (!active) {
+                    SimpleDateFormat SDF = new SimpleDateFormat("HH:mm dd-MMM-yyyy");
+                    date = SDF.format(new Date()); //format date and save as string
+                    tv_Distance.setText("0.00m"); //if starting new log, reset distance textView
+                    active = true; //set status to ACTIVE (currently tracking)
+                }
+                oLocation = location; //set start location to current location
+            }
+        });
+
+        //pause button listener
+        pauseFAB.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                TimeBuff += MillisecondTime; //save time buffer
+                handler.removeCallbacks(runnable); //stop runnable
+
+                tracking = false; //set status to NOT TRACKING
+
+                startFAB.show(); //show start button
+            }
+        });
+
+        //stop button listener
+        stopFAB.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                handler.removeCallbacks(runnable); //stop runnable
+
+                MyDBHandler dbHandler = new MyDBHandler(getBaseContext(), null, null, 1); //call database helper
+                RunLog runLog = new RunLog(date, tv_Distance.getText().toString(), UpdateTime); //create new record runLog
+                dbHandler.addLog(runLog); //add new log to database
+
+                //get log details for best time in database
+                SQLiteDatabase db = dbHandler.getReadableDatabase();
+                String bestQuery = "SELECT * FROM " + MyDBHandler.TABLE_RUNLOGS + " ORDER BY time ASC LIMIT 1";
+                Cursor c = db.rawQuery(bestQuery, null);
+                c.moveToNext();
+                String bestDateTime = c.getString(c.getColumnIndex("datetime"));
+                String dis = c.getString(c.getColumnIndex("distance"));
+                long time = c.getLong(c.getColumnIndex("time"));
+
+                //if the current log is the new best time, show a dialog box
+                if (date.equals(bestDateTime) && dis.equals(tv_Distance.getText().toString()) && (time == UpdateTime)) {
+                    new AlertDialog.Builder(cont)
+                            .setTitle("New Best Time")
+                            .setMessage("Congratulations. You set a new record! Distance: " + tv_Distance.getText().toString() + " Time: " + tv_Time.getText().toString())
+                            .setCancelable(false)
+                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                }
+                            })
+                            .create()
+                            .show();
+                }
+
+                //reset UI
+                stopFAB.hide();
+                pauseFAB.hide();
+                startFAB.show();
+
+                tv_Distance.setText("");
+                tv_Time.setText("");
+
+                tot_dist = (float) 0.00;
+                MillisecondTime = 0L;
+                StartTime = 0L;
+                TimeBuff = 0L;
+                UpdateTime = 0L;
+                Seconds = 0;
+                Minutes = 0;
+                MilliSeconds = 0;
+
+                //set status to NOT TRACKING and NOT ACTIVE
+                tracking = false;
+                active = false;
+
+            }
+        });
+
+        //list button listener
+        listFAB.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //launch ViewListActivity
+                Intent i = new Intent(getApplicationContext(), ViewListActivity.class);
+                startActivity(i);
+            }
+        });
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        //bind service
+        intent = new Intent(this, MyService.class);
+        bindService(intent, myConnection, Context.BIND_AUTO_CREATE);
+
+        //check if location permission is granted
+        if (checkLocationPermission()) {
+            //if granted, update Google Map view
+            supportMapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+            supportMapFragment.getMapAsync(this);
+
+            //Broadcast receiver everytime location is updated
+            LocalBroadcastManager.getInstance(this).registerReceiver(
+                    new BroadcastReceiver() {
+                        @Override
+                        public void onReceive(Context context, Intent intent) {
+                            location = intent.getExtras().getParcelable("loc");
+                            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                            moveCamera(latLng, 18.5f);
+                            try {
+                                //if status is TRACKING, calculate new distance and display
+                                if (tracking) {
+                                    dis = oLocation.distanceTo(location);
+                                    oLocation = location;
+                                    tot_dist = dis + tot_dist;
+                                    String distance = String.format("%.2f", tot_dist);
+                                    tv_Distance.setText(distance + "m");
+                                }
+                            } catch (Exception e) {
+                            }
+                        }
+                    }
+                    , new IntentFilter("LocationBroadcastService"));
+            startService(intent);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        //when app is destroyed, stop service
+        handler.removeCallbacks(runnable);
+        stopService(intent);
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+
+        //do not destroy app when back button is pressed
+        moveTaskToBack(true);
+    }
 
     @SuppressLint("MissingPermission")
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        Log.d("RunningTracker", "onMapReady");
+        //configure Google Map view
         gmap = googleMap;
         gmap.setMyLocationEnabled(true);
         gmap.getUiSettings().setZoomControlsEnabled(true);
         stopService(intent);
     }
 
-    public void moveCamera(LatLng latLng, float zoom){
-        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng,zoom);
+    public void moveCamera(LatLng latLng, float zoom) {
+        //Google Map view animation when location is changed
+        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, zoom);
         gmap.animateCamera(cameraUpdate);
     }
 
-
+    //check and ask location permission function
     public boolean checkLocationPermission() {
+        //if permission not granted
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
 
-            // Should we show an explanation?
+            //if user already denied permission once before
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.ACCESS_FINE_LOCATION)) {
 
-                // Show an explanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
+                //show explanation to user and ask permission again
                 new AlertDialog.Builder(this)
                         .setTitle("Location Permission Needed")
                         .setMessage("Location services is needed for this app to work properly. Please allow it")
@@ -334,17 +342,19 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                         .show();
                 Log.d("RunningTracker", "request permission");
             } else {
-                // No explanation needed, we can request the permission.
+                // If first time user is being asked permission
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                         0);
             }
             return false;
         } else {
+            //permission already granted
             return true;
         }
     }
 
+    //after permission has been asked
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
@@ -354,43 +364,35 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                    // permission was granted, yay! Do the
-                    // location-related task you need to do.
+                    // permission was granted
                     if (ContextCompat.checkSelfPermission(this,
                             Manifest.permission.ACCESS_FINE_LOCATION)
                             == PackageManager.PERMISSION_GRANTED) {
-
-                        //Request location updates:
-                        //locationManager.requestLocationUpdates(provider, 400, 1, this);
                         Toast.makeText(this, "Location permissions granted", Toast.LENGTH_SHORT).show();
-                        Log.d("RunningTracker", "Permission granted");
-                        supportMapFragment = (SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map);
+
+                        //Update map
+                        supportMapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
                         supportMapFragment.getMapAsync(this);
+
+                        //Broadcast receiver everytime location is updated
                         LocalBroadcastManager.getInstance(this).registerReceiver(
                                 new BroadcastReceiver() {
                                     @Override
                                     public void onReceive(Context context, Intent intent) {
-                                        Log.d("RunningTracker", "onReceive");
-                                        //Float dis = intent.getExtras().getFloat("dist");
-                                        //Location location1 = intent.getExtras().getParcelable("oloc");
                                         location = intent.getExtras().getParcelable("loc");
-
-                                        //Float dis = location1.distanceTo(location);
-                                        //String distance = String.format("%.2f", dis);
-
                                         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
                                         moveCamera(latLng, 18.5f);
-                                        //Log.d("RunningTracker", "Distance: " + distance);
-                                        //tv_Distance.setText(distance + "m");
-                                        try{
+                                        try {
+                                            //if status is TRACKING, calculate new distance and display
                                             if (tracking) {
-                                                dis = oLocation.distanceTo(location)/1000;
-                                                float show_dist = dis + tot_dist;
-                                                String distance = String.format("%.2f", show_dist);
-                                                Log.d("RunningTracker", "Distance: " + distance);
+                                                dis = oLocation.distanceTo(location);
+                                                oLocation = location;
+                                                tot_dist = dis + tot_dist;
+                                                String distance = String.format("%.2f", tot_dist);
                                                 tv_Distance.setText(distance + "m");
                                             }
-                                        } catch (Exception e){}
+                                        } catch (Exception e) {
+                                        }
                                     }
                                 }
                                 , new IntentFilter("LocationBroadcastService"));
@@ -398,11 +400,12 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                     }
 
                 } else {
-
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
-                    //Toast.makeText(this, "Please restart app and allow location permissions", Toast.LENGTH_SHORT).show();
+                    // permission denied
                     Log.d("RunningTracker", "Permission denied");
+
+                    //permission will continue to be asked until accepted
+
+                    //explain to user and ask permission again
                     new AlertDialog.Builder(this)
                             .setTitle("Location Permission Needed")
                             .setMessage("Location services is needed for this app to work properly. Please allow it")
@@ -417,8 +420,6 @@ public class TrackingActivity extends AppCompatActivity implements OnMapReadyCal
                             })
                             .create()
                             .show();
-                    Log.d("RunningTracker", "request permission");
-
                 }
                 return;
             }

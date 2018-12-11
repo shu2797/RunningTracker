@@ -1,3 +1,11 @@
+/*
+Name: Mayur Gunputh
+Date: 11 Dec 2018
+Project: G53MDP Coursework 2
+MyService.java
+Service to continuously detect location change and broadcast the new location
+ */
+
 package com.example.mayur.runningtracker;
 
 import android.annotation.SuppressLint;
@@ -10,10 +18,8 @@ import android.location.LocationManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.Parcelable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-import android.widget.Toast;
 
 public class MyService extends Service implements LocationListener {
 
@@ -25,18 +31,17 @@ public class MyService extends Service implements LocationListener {
 
     @Override
     public IBinder onBind(Intent intent) {
-        Log.d("RunningTracker", "onBind");
         return mBind;
     }
 
     @SuppressLint("MissingPermission")
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId){
+    public int onStartCommand(Intent intent, int flags, int startId) {
 
+        //initialise location manager and listener
         LocationManager locationManager =
-                (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+                (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         MyService locationListener = new MyService();
-
 
 
         try {
@@ -45,25 +50,17 @@ public class MyService extends Service implements LocationListener {
                     5, // minimum distance between updates, in metres
                     locationListener);
         } catch (SecurityException e) {
-            Log.d("g53mdp", e.toString());
         }
         return START_STICKY;
     }
 
-    public class mBinder extends Binder{
-        MyService getService(){
-            return MyService.this;
-        }
-    }
-
+    //when location change is detected
     @Override
     public void onLocationChanged(Location location) {
-
-
+        //broadcast new location
         Intent i = new Intent("LocationBroadcastService");
         i.putExtra("loc", location);
         LocalBroadcastManager.getInstance(this).sendBroadcast(i);
-        Log.d("RunningTracker", "Location changed: " + location.toString());
     }
 
     @Override
@@ -79,5 +76,11 @@ public class MyService extends Service implements LocationListener {
     @Override
     public void onProviderDisabled(String s) {
 
+    }
+
+    public class mBinder extends Binder {
+        MyService getService() {
+            return MyService.this;
+        }
     }
 }

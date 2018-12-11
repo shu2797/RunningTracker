@@ -1,3 +1,11 @@
+/*
+Name: Mayur Gunputh
+Date: 11 Dec 2018
+Project: G53MDP Coursework 2
+MyContentProvider.java
+Content Provider
+ */
+
 package com.example.mayur.runningtracker.provider;
 
 import android.content.ContentProvider;
@@ -7,26 +15,23 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
-import android.text.TextUtils;
 
 import com.example.mayur.runningtracker.MyDBHandler;
 
 
 public class MyContentProvider extends ContentProvider {
-    private MyDBHandler myDB;
-
+    public static final int RUNLOGS = 1;
     private static final String AUTHORITY = "com.example.mayur.runningtracker.provider.MyContentProvider";
     private static final String RUNLOGS_TABLE = "runlogs";
     public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/" + RUNLOGS_TABLE);
 
     private static final UriMatcher sURIMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
-    public static final int RUNLOGS = 1;
-
-
     static {
         sURIMatcher.addURI(AUTHORITY, RUNLOGS_TABLE, RUNLOGS);
     }
+
+    private MyDBHandler myDB;
 
     public MyContentProvider() {
     }
@@ -49,13 +54,13 @@ public class MyContentProvider extends ContentProvider {
         int uriType = sURIMatcher.match(uri);
         SQLiteDatabase sqlDB = myDB.getWritableDatabase();
         long id = 0;
-        switch (uriType){
+        switch (uriType) {
             case RUNLOGS:
                 id = sqlDB.insert(MyDBHandler.TABLE_RUNLOGS, null, values);
                 break;
 
-                default:
-                    throw new IllegalArgumentException("Unknown URI: " + uri);
+            default:
+                throw new IllegalArgumentException("Unknown URI: " + uri);
         }
         getContext().getContentResolver().notifyChange(uri, null);
         return Uri.parse(RUNLOGS_TABLE + "/" + id);
@@ -73,12 +78,12 @@ public class MyContentProvider extends ContentProvider {
         SQLiteQueryBuilder queryBuilder = new SQLiteQueryBuilder();
         queryBuilder.setTables(MyDBHandler.TABLE_RUNLOGS);
         int uriType = sURIMatcher.match(uri);
-        switch (uriType){
+        switch (uriType) {
             case RUNLOGS:
                 queryBuilder.appendWhere(MyDBHandler.COLUMN_DATETIME + "=" + uri.getLastPathSegment());
                 break;
-                default:
-                    throw new IllegalArgumentException("Unknown URI");
+            default:
+                throw new IllegalArgumentException("Unknown URI");
         }
         Cursor cursor = queryBuilder.query(myDB.getReadableDatabase(), projection, selection, selectionArgs, null, null, sortOrder);
         cursor.setNotificationUri(getContext().getContentResolver(), uri);
