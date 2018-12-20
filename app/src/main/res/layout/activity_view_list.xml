@@ -6,12 +6,12 @@
     android:layout_height="match_parent"
     tools:context=".ViewListActivity">
 
-    <TableLayout
-        xmlns:tools= "http://schemas.android.com/tools"
-        android:id= "@+id/tablelayout"
-        android:layout_width= "match_parent"
-        android:layout_height= "match_parent"
+    <TableLayout xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/tablelayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:stretchColumns="*">
 
     </TableLayout>
+
 </android.support.constraint.ConstraintLayout>
